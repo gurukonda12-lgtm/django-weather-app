@@ -6,51 +6,83 @@ import datetime
 
 def home(request):
 
-    city = request.POST.get('city', 'indore')
+    if request.method == "POST":
+        city = request.POST.get('city').strip()
+    else:
+        ip_data = requests.get("http://ip-api.com/json").json()
+        city = ip_data.get("city", "Indore")
+
     day = datetime.date.today()
 
-    OPENWEATHER_API_KEY = '089811b37cb013960c17cf13d369f872'
+    API_KEY = "089811b37cb013960c17cf13d369f872"
 
-    url = 'https://api.openweathermap.org/data/2.5/weather'
+    url = "https://api.openweathermap.org/data/2.5/forecast"
+
     params = {
-        'q': city,
-        'appid': OPENWEATHER_API_KEY,
-        'units': 'metric'
+        "q": city,
+        "appid": API_KEY,
+        "units": "metric"
     }
 
-    image_url = None  # Google API removed (safe & clean)
-
     try:
-        response = requests.get(url, params=params)
-
-        if response.status_code != 200:
-            raise KeyError
-
+        response = requests.get(url, params=params, timeout=5)
         data = response.json()
+        print(data)
 
-        description = data['weather'][0]['description']
-        icon = data['weather'][0]['icon']
-        temp = data['main']['temp']
+        if data.get("cod") != "200":
+            messages.error(request, "City not found")
 
-        return render(request, 'weatherapp/index.html', {
-            'description': description,
-            'icon': icon,
-            'temp': temp,
-            'day': day,
-            'city': city,
-            'exception_occurred': False,
-            'image_url': image_url
-        })
+            return render(request, "weatherapp/index.html", {
+                "exception_occurred": True
+            })
 
-    except Exception:
-        messages.error(request, 'City information is not available from Weather API')
+        current = data["list"][0]
 
-        return render(request, 'weatherapp/index.html', {
-            'description': 'clear sky',
-            'icon': '01d',
-            'temp': 25,
-            'day': day,
-            'city': 'indore',
-            'exception_occurred': True,
-            'image_url': None
+        description = current["weather"][0]["description"]
+        icon = current["weather"][0]["icon"]
+        temp = current["main"]["temp"]
+
+        # Dynamic background
+        if "cloud" in description:
+            bg = "https://images.pexels.com/photos/531756/pexels-photo-531756.jpeg"
+        elif "rain" in description:
+            bg = "https://images.pexels.com/photos/110874/pexels-photo-110874.jpeg"
+        elif "clear" in description:
+            bg = "https://images.pexels.com/photos/3008509/pexels-photo-3008509.jpeg"
+        else:
+            bg = "https://images.pexels.com/photos/2559941/pexels-photo-2559941.jpeg"
+
+        forecast_data = []
+
+        for item in data["list"][1:6]:
+            forecast_data.append({
+                "time": item["dt_txt"][11:16],
+                "temp": item["main"]["temp"],
+                "icon": item["weather"][0]["icon"],
+                "desc": item["weather"][0]["description"]
+            })
+
+        context = {
+            "description": description,
+            "icon": icon,
+            "temp": temp,
+            "day": day,
+            "city": city,
+            "bg": bg,
+            "forecast_data": forecast_data,
+            "exception_occurred": False
+        }
+
+        return render(request, "weatherapp/index.html", context)
+
+    except Exception as e:
+        print("ERROR:", e)
+
+        return render(request, "weatherapp/index.html", {
+            "description": "clear sky",
+            "icon": "01d",
+            "temp": 25,
+            "day": day,
+            "city": "Indore",
+            "exception_occurred": True
         })

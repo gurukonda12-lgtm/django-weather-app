@@ -1,81 +1,120 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weather App</title>
 
-  <!-- Google Font -->
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap"
-    rel="stylesheet"
-  />
+<title>Weather App</title>
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="{% static 'style.css' %}" />
+<link rel="stylesheet" href="{% static 'weatherapp/style.css' %}">
+
 </head>
 
-<body
-{% if exception_occurred %}
-  style="background-image: url('https://images.pexels.com/photos/3008509/pexels-photo-3008509.jpeg?auto=compress&cs=tinysrgb&w=1600');"
-{% elif image_url %}
-  style="background-image: url('{{ image_url }}');"
-{% else %}
-  style="background-image: url('https://images.pexels.com/photos/531756/pexels-photo-531756.jpeg?auto=compress&cs=tinysrgb&w=1600');"
+<body style="background-image:url('{{ bg }}'); background-size:cover; background-position:center;">
+
+<div class="container">
+
+<h1>Weather App</h1>
+
+<form method="POST">
+{% csrf_token %}
+
+<input type="text" name="city" placeholder="Enter city" value="{{ city }}" required>
+
+<button type="submit">Search</button>
+
+<div id="loading" style="display:none;">
+<p>Loading weather...</p>
+</div>
+
+</form>
+
+
+{% if temp %}
+
+<div class="weather-result">
+
+<h2 class="city">{{ city }}</h2>
+
+<h1 class="temperature">{{ temp }} °C</h1>
+
+<img src="https://openweathermap.org/img/wn/{{ icon }}@2x.png" alt="weather icon">
+
+<p class="description">{{ description }}</p>
+
+<p class="date">{{ day }}</p>
+
+</div>
+
 {% endif %}
->
 
-  <div class="container">
-    <h1 class="heading">Weather App</h1>
 
-    <!-- Search Form -->
-    <form method="POST">
-      {% csrf_token %}
-      <input
-        type="text"
-        name="city"
-        placeholder="Enter City"
-        value="{{ city }}"
-        required
-      />
-      <button type="submit" class="btn">Search</button>
-    </form>
+{% if forecast_data %}
 
-    <!-- Weather Info -->
-    {% if temp %}
-    <div class="weather">
-      <div class="left">
-        <h2 class="temp">{{ temp }}&#176; C</h2>
-        <h2 class="city">{{ city }}</h2>
-      </div>
+<div class="forecast">
 
-      <div class="right">
-        <div class="icon">
-          <img
-            src="https://openweathermap.org/img/w/{{ icon }}.png"
-            width="120"
-            alt="Weather Icon"
-          />
-        </div>
+<h2>Next Hours Forecast</h2>
 
-        <div class="condition">
-          <p>{{ description }}</p>
-          <p>{{ day }}</p>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-  </div>
+<div class="forecast-container">
 
-  <!-- Error Alert -->
-  {% if exception_occurred %}
-  <script>
-    window.onload = function () {
-      alert("City information is not available from Weather API");
-    };
-  </script>
-  {% endif %}
+{% for item in forecast_data %}
+
+<div class="forecast-card">
+
+<p>{{ item.time }}</p>
+
+<img src="https://openweathermap.org/img/w/{{ item.icon }}.png">
+
+<p>{{ item.temp }}°C</p>
+
+<p>{{ item.desc }}</p>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+{% endif %}
+
+</div>
+
+
+<script>
+
+const form = document.querySelector("form");
+const loading = document.getElementById("loading");
+
+form.addEventListener("submit", function(){
+loading.style.display = "block";
+});
+
+
+const weather = "{{ description|lower }}";
+
+if(weather.includes("cloud")){
+document.body.style.background = "linear-gradient(#bdc3c7,#2c3e50)";
+}
+
+else if(weather.includes("rain")){
+document.body.style.background = "linear-gradient(#4e54c8,#8f94fb)";
+}
+
+else if(weather.includes("clear")){
+document.body.style.background = "linear-gradient(#f7971e,#ffd200)";
+}
+
+else if(weather.includes("snow")){
+document.body.style.background = "linear-gradient(#83a4d4,#b6fbff)";
+}
+
+else if(weather.includes("thunder")){
+document.body.style.background = "linear-gradient(#141e30,#243b55)";
+}
+
+</script>
 
 </body>
 </html>
