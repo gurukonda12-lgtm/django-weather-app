@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.contrib import messages
+from decouple import config
 import requests
 import datetime
 
@@ -14,7 +15,7 @@ def home(request):
 
     day = datetime.date.today()
 
-    API_KEY = "089811b37cb013960c17cf13d369f872"
+    API_KEY = "ca1a28a2e21119ea35c1a0d399bd8c0d"
 
     url = "https://api.openweathermap.org/data/2.5/forecast"
 
